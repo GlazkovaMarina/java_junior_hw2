@@ -14,7 +14,7 @@ public class JacksonDemo {
 
     Student student = new Student();
     student.setFirstName("Igor");
-    student.setFirstName("Chestnov");
+    student.setSecondName("Chestnov");
     System.out.println(writer.writeValueAsString(student));
 
     Student readStudent = objectMapper.reader().readValue("""

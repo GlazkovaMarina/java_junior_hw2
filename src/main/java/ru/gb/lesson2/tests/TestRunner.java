@@ -1,26 +1,58 @@
 package ru.gb.lesson2.tests;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.AccessFlag;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 
 public class TestRunner {
 
+  private void sortTestByOrder(Method first, Method second){
+//    if (first.getParameterAnnotations(). < second.getParameterAnnotations()){
+//
+//    }
+  }
+
+
   public static void run(Class<?> testClass) {
     final Object testObj = initTestObj(testClass);
-    for (Method testMethod : testClass.getDeclaredMethods()) {
-      if (testMethod.accessFlags().contains(AccessFlag.PRIVATE)) {
-        continue;
-      }
 
-      if (testMethod.getAnnotation(Test.class) != null) {
+    List<Method> methodList = new ArrayList<>();
+    Method[] methods = testClass.getDeclaredMethods();
+    for (Method testMethod : methods){
+      if (testMethod.getAnnotation(Test.class) != null && !testMethod.accessFlags().contains(AccessFlag.PRIVATE)){
+        methodList.add(testMethod);
+      }
+    }
+    methodList.sort(new Comparator<Method>() {
+      @Override
+      public int compare(Method o1, Method o2) {
+        return o1.getAnnotation(Test.class).order() - o2.getAnnotation(Test.class).order();
+      }
+    });
+
+    try {
+    testClass.getMethod("beforeAll").invoke(testObj);
+    } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+      throw new RuntimeException(e);
+    }
+    for (Method testMethod : methodList) {
         try {
+          testClass.getMethod("beforeEach").invoke(testObj);
           testMethod.invoke(testObj);
-        } catch (IllegalAccessException | InvocationTargetException e) {
+          testClass.getMethod("afterEach").invoke(testObj);
+        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
           throw new RuntimeException(e);
         }
-      }
+    }
+    try {
+    testClass.getMethod("afterAll").invoke(testObj);
+    } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+      throw new RuntimeException(e);
     }
   }
 
